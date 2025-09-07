@@ -50,7 +50,7 @@ export default function SignUpPage() {
       }
       setSuccess(true);
       setTimeout(() => router.replace("/main/signin"), 1500);
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
     }
   }

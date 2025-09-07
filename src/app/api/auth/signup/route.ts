@@ -18,15 +18,14 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.create({
       data: { email, password: hashed },
     });
-    // Create an initial empty questionnaire for the current year (2025)
-    await prisma.questionnaire.create({
-      data: {
-        year: 2025,
-        answers: {},
-        userId: user.id,
-      },
+    // Optionally create an initial empty questionnaire for the current year (2025)
+    // (No change here, but user can skip upload in the UI)
+    return NextResponse.json({
+      success: true,
+      user: { id: user.id, email: user.email },
+      message: "Signup successful. You may upload documents now or skip to your profile.",
+      allowSkipUpload: true
     });
-    return NextResponse.json({ success: true, user: { id: user.id, email: user.email } });
   } catch (error) {
     return NextResponse.json({ error: "Internal server error", details: (error as Error).message }, { status: 500 });
   }

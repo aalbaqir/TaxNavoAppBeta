@@ -19,3 +19,19 @@ export default function Input({ label, error, ...props }: InputProps) {
     </div>
   );
 }
+
+// TurboTax-style card example
+// <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full mx-auto">
+//   <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center font-heading">Sign In</h1>
+//   <form className="space-y-6">
+//     <label className="block">
+//       <span className="block text-gray-800 font-semibold mb-2">Email</span>
+//       <input className="w-full border border-blue-200 rounded-md px-4 py-2 text-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition" type="email" required />
+//     </label>
+//     <label className="block">
+//       <span className="block text-gray-800 font-semibold mb-2">Password</span>
+//       <input className="w-full border border-blue-200 rounded-md px-4 py-2 text-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition" type="password" required />
+//     </label>
+//     <button type="submit" className="w-full bg-gray-900 text-white rounded-full px-6 py-3 font-bold text-lg shadow-md hover:bg-gray-800 transition">Sign In</button>
+//   </form>
+// </div>

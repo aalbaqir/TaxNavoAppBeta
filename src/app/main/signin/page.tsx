@@ -31,19 +31,19 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-blue-50">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-6">Sign In</h1>
-        <label className="block mb-4">
-          <span className="block mb-1">Email</span>
-          <input type="email" className="w-full border rounded px-3 py-2" value={email} onChange={e => setEmail(e.target.value)} required />
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-blue-50 px-2">
+      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow w-full max-w-sm flex flex-col items-center">
+        <h1 className="text-2xl font-bold mb-6 text-center w-full">Sign In</h1>
+        <label className="block mb-4 w-full flex flex-col items-center">
+          <span className="block mb-1 text-center w-full">Email</span>
+          <input type="email" className="border rounded px-3 py-2 w-3/4 max-w-xs" value={email} onChange={e => setEmail(e.target.value)} required />
         </label>
-        <label className="block mb-6">
-          <span className="block mb-1">Password</span>
-          <input type="password" className="w-full border rounded px-3 py-2" value={password} onChange={e => setPassword(e.target.value)} required />
+        <label className="block mb-6 w-full flex flex-col items-center">
+          <span className="block mb-1 text-center w-full">Password</span>
+          <input type="password" className="border rounded px-3 py-2 w-3/4 max-w-xs" value={password} onChange={e => setPassword(e.target.value)} required />
         </label>
         {error && <div className="text-red-600 mb-4">{error}</div>}
-        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700">Sign In</button>
+        <button type="submit" className="bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 w-3/4 max-w-xs mx-auto">Sign In</button>
       </form>
     </div>
   );
