@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 
 // ---
 // 🎮 TaxNavo Journey: Story-Style, Contingent IRS 1040 Questionnaire
@@ -410,105 +409,323 @@ interface ChatMessage {
   text: string;
 }
 
-export default function ModernQuestionnaire() {
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string | number | undefined>>({});
-  const current = questions[step];
-  const progress = Math.round(((step + 1) / questions.length) * 100);
+export default function Tax2022Questionnaire() {
+	const { data: session, status } = useSession();
+	const router = useRouter();
+	const [step, setStep] = useState(0);
+	const [answers, setAnswers] = useState<Answers>({});
+	const [loading, setLoading] = useState(false);
+	const [chatOpen, setChatOpen] = useState(false);
+	const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+	const [chatInput, setChatInput] = useState("");
+	const current = questions[step];
+	const [activeTab, setActiveTab] = useState<'profile' | 'learn' | 'taxprep'>('taxprep');
+	const [taxPrepTab, setTaxPrepTab] = useState<'questionnaire' | 'documents'>('questionnaire');
+	const [device, setDevice] = useState<'mobile' | 'desktop'>('desktop');
 
-  function handleInput(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    setAnswers((prev) => ({ ...prev, [current.id]: e.target.value }));
-  }
+	// Filter questions based on showIf
+	const visibleQuestions = questions.filter(
+		(q) => !q.showIf || q.showIf(answers)
+	);
+	const currentQuestion = visibleQuestions[step];
 
-  function handleNext() {
-    setStep((s) => s + 1);
-  }
+	// Clamp step to valid range if visibleQuestions changes
+	useEffect(() => {
+		if (step > visibleQuestions.length - 1) {
+			setStep(visibleQuestions.length - 1 >= 0 ? visibleQuestions.length - 1 : 0);
+		} else if (step < 0) {
+			setStep(0);
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [visibleQuestions.length]);
 
-  function handlePrev() {
-    setStep((s) => (s > 0 ? s - 1 : 0));
-  }
+	// Load saved answers for this user/year
+	useEffect(() => {
+		if (status === "authenticated" && session?.user?.email) {
+			setLoading(true);
+			fetch(`/api/questionnaire?year=2022`)
+				.then(async (res) => {
+					if (res.ok) {
+						const data = await res.json();
+						if (data.questionnaire?.answers) {
+							setAnswers(data.questionnaire.answers);
+						}
+					}
+				})
+				.finally(() => setLoading(false));
+		}
+	}, [status, session]);
 
-  return (
-    <div className="w-full h-full flex flex-col items-center justify-center">
-      {/* Sub-tabs */}
-      {/* <div className="flex justify-center gap-4 mb-8">
-        <button className="px-5 py-2 rounded-full font-semibold text-base bg-[#8000FF] text-white shadow">
-          Questionnaire
-        </button>
-        <button className="px-5 py-2 rounded-full font-semibold text-base bg-white text-[#8000FF] border border-[#8000FF]/20 hover:bg-[#F3E8FF] hover:border-[#8000FF]">
-          Documents
-        </button>
-      </div> */}
-      {/* Animated Card */}
-      <motion.div
-        key={step}
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -30 }}
-        transition={{ duration: 0.4, ease: "easeInOut" }}
-        className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 md:p-12 w-full max-w-2xl mx-auto"
-      >
-        {/* Progress Bar */}
-        <div className="mb-6">
-          <motion.div className="h-3 rounded-full bg-[#F3E8FF] overflow-hidden mb-4" initial={false}>
-            <motion.div
-              className="h-3 rounded-full bg-[#FFC107]"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
-            />
-          </motion.div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-[#8000FF] font-semibold">
-              Step {step + 1} of {questions.length}
-            </span>
-            <span className="text-sm text-[#FFC107] font-bold">{progress}% Complete</span>
-          </div>
-        </div>
-        {/* Question */}
-        <motion.h2
-          className="text-2xl md:text-3xl font-bold text-[#8000FF] mb-6"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          {current.question}
-        </motion.h2>
-        {/* Answer UI */}
-        <div className="flex flex-col gap-4">
-          <input
-            className="px-4 py-3 rounded-xl border border-[#8000FF]/20 focus:ring-2 focus:ring-[#FFC107] text-lg"
-            placeholder={current.placeholder}
-            type="text"
-            value={answers[current.id] || ""}
-            onChange={handleInput}
-          />
-          <motion.button
-            whileHover={{ scale: 1.04, backgroundColor: "#FFC107", color: "#8000FF" }}
-            whileTap={{ scale: 0.97 }}
-            className="mt-2 px-6 py-3 rounded-xl bg-[#8000FF] text-white font-semibold shadow hover:bg-[#FFC107] hover:text-[#8000FF] transition-colors duration-150"
-            onClick={handleNext}
-            disabled={!answers[current.id]}
-          >
-            Next
-          </motion.button>
-        </div>
-        {/* Navigation */}
-        <div className="flex justify-between mt-8">
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-            className="text-[#8000FF] font-semibold hover:underline transition-all"
-            onClick={handlePrev}
-            disabled={step === 0}
-          >
-            Back
-          </motion.button>
-          <span className="text-xs text-gray-400">
-            Need help? <span className="underline cursor-pointer">Chat with support</span>
-          </span>
-        </div>
-      </motion.div>
-    </div>
-  );
+	// Save answers on change (debounced for real app)
+	useEffect(() => {
+		if (status === "authenticated" && session?.user?.email) {
+			fetch("/api/questionnaire", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ year: 2022, answers }),
+			});
+		}
+	}, [answers, status, session]);
+
+	if (loading) return <div className="p-8">Loading your data...</div>;
+
+	// Handle option button click
+	function handleOption(option: string) {
+		setAnswers((prev: Answers) => ({ ...prev, [current.id]: option }));
+		setStep((s) => s + 1);
+	}
+
+	// Handle input change for text, number, date, textarea, email
+	function handleInput(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+		setAnswers((prev: Answers) => ({ ...prev, [current.id]: e.target.value }));
+	}
+
+	// Go to next question
+	function handleNext() {
+		setStep((s) => s + 1);
+	}
+
+	// Go to previous question
+	function handlePrev() {
+		setStep((s) => (s > 0 ? s - 1 : 0));
+	}
+
+	function handleSendChat() {
+		if (!chatInput.trim()) return;
+		setChatMessages((msgs) => [...msgs, { sender: "user", text: chatInput }]);
+		setChatInput("");
+		setTimeout(() => {
+			setChatMessages((msgs) => [
+				...msgs,
+				{ sender: "assistant", text: "Thanks for your message! We'll get back to you soon." }
+			]);
+		}, 800);
+	}
+
+	const renderTaxPrepTabs = () => (
+		<div className="flex justify-center gap-4 mb-6">
+			<button
+				className={`px-3 py-1 rounded font-medium ${taxPrepTab === 'questionnaire' ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}
+				onClick={() => setTaxPrepTab('questionnaire')}
+			>
+				Questionnaire
+			</button>
+			<button
+				className={`px-3 py-1 rounded font-medium ${taxPrepTab === 'documents' ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}
+				onClick={() => setTaxPrepTab('documents')}
+			>
+				Documents
+			</button>
+		</div>
+	);
+
+	let mainContent;
+	if (activeTab === 'profile') {
+		mainContent = (
+			<div className={`${device === 'desktop' ? 'w-full h-full' : 'w-full max-w-md mx-auto'} bg-white rounded-xl shadow-lg p-8 flex flex-col items-center`}>
+				<h2 className="text-2xl font-bold mb-4">Profile</h2>
+				<p className="mb-4">View and update your profile information.</p>
+				<button
+					className="px-6 py-2 rounded bg-brand-blue text-white font-semibold hover:bg-brand-blue-dark"
+					onClick={() => router.push('/main/profile')}
+				>
+					Go to Profile
+				</button>
+			</div>
+		);
+	} else if (activeTab === 'learn') {
+		mainContent = (
+			<div className={`${device === 'desktop' ? 'w-full h-full' : 'w-full max-w-md mx-auto'} bg-white rounded-xl shadow-lg p-8 flex flex-col items-center`}>
+				<h2 className="text-2xl font-bold mb-4">Learn</h2>
+				<p className="mb-4">Access your personalized tax learning courses.</p>
+				<button
+					className="px-6 py-2 rounded bg-brand-blue text-white font-semibold hover:bg-brand-blue-dark"
+					onClick={() => router.push('/main/learn')}
+				>
+					Go to Courses
+				</button>
+			</div>
+		);
+	} else if (activeTab === 'taxprep') {
+		mainContent = (
+			<div className={`${device === 'desktop' ? 'w-full h-full' : 'w-full max-w-md mx-auto'}`}>
+				{renderTaxPrepTabs()}
+				{taxPrepTab === 'questionnaire' && (
+					<div className="bg-white rounded-xl shadow-lg p-8">
+						<div className="mb-8">
+							<p className="text-lg font-medium mb-4">{current?.question.replace(/'/g, "&apos;")}</p>
+							{current && (current as any).options && (
+								<div className="flex flex-col gap-3">
+									{(current as any).options.map((option: string) => (
+										<button
+											key={option}
+											className="px-6 py-3 rounded-lg border border-purple-200 bg-purple-100 hover:bg-purple-200 text-purple-900 font-semibold transition-colors duration-150"
+											onClick={() => handleOption(option)}
+										>
+											{option}
+										</button>
+									))}
+								</div>
+							)}
+							{current && (current as any).type === "date" && (
+								<div className="flex flex-col gap-3">
+									<input
+										type="date"
+										className="px-4 py-2 rounded border border-purple-200"
+										value={answers[current.id] || ""}
+										onChange={handleInput}
+									/>
+									<button
+										className="mt-2 px-6 py-2 rounded bg-purple-600 text-white font-semibold hover:bg-purple-700"
+										onClick={handleNext}
+										disabled={!answers[current.id]}
+									>
+										Next
+									</button>
+								</div>
+							)}
+							{current && (current as any).type === "number" && (
+								<div className="flex flex-col gap-3">
+									<input
+										type="number"
+										className="px-4 py-2 rounded border border-purple-200"
+										placeholder={current.placeholder}
+										value={answers[current.id] || ""}
+										onChange={handleInput}
+									/>
+									<button
+										className="mt-2 px-6 py-2 rounded bg-purple-600 text-white font-semibold hover:bg-purple-700"
+										onClick={handleNext}
+										disabled={!answers[current.id]}
+									>
+										Next
+									</button>
+								</div>
+							)}
+							{current && ((current as any).type === "text" || (current as any).type === "email") && (
+								<div className="flex flex-col gap-3">
+									<input
+										type={(current as any).type}
+										className="px-4 py-2 rounded border border-purple-200"
+										placeholder={current.placeholder}
+										value={answers[current.id] || ""}
+										onChange={handleInput}
+									/>
+									<button
+										className="mt-2 px-6 py-2 rounded bg-purple-600 text-white font-semibold hover:bg-purple-700"
+										onClick={handleNext}
+										disabled={!answers[current.id]}
+									>
+										Next
+									</button>
+								</div>
+							)}
+							{current && (current as any).type === "textarea" && (
+								<div className="flex flex-col gap-3">
+									<textarea
+										className="px-4 py-2 rounded border border-purple-200"
+										placeholder={current.placeholder}
+										value={answers[current.id] || ""}
+										onChange={handleInput}
+										rows={4}
+									/>
+									<button
+										className="mt-2 px-6 py-2 rounded bg-purple-600 text-white font-semibold hover:bg-purple-700"
+										onClick={handleNext}
+										disabled={!answers[current.id]}
+									>
+										Next
+									</button>
+								</div>
+							)}
+						</div>
+						<div className="flex justify-between">
+							<button
+								className="text-purple-500 hover:underline"
+								onClick={handlePrev}
+								disabled={step === 0}
+							>
+								Back
+							</button>
+							<span className="text-sm text-purple-400">Step {step + 1} of {questions.length}</span>
+						</div>
+					</div>
+				)}
+				{taxPrepTab === 'documents' && (
+					<div className="bg-white rounded-xl shadow-lg p-8">
+						<h2 className="text-2xl font-bold mb-4">Documents</h2>
+						<p className="mb-4">Upload and manage your tax documents here.</p>
+						<button
+							className="px-6 py-2 rounded bg-brand-blue text-white font-semibold hover:bg-brand-blue-dark"
+							onClick={() => router.push('/main/documents')}
+						>
+							Go to Documents
+						</button>
+					</div>
+				)}
+			</div>
+		);
+	}
+
+	if (step >= visibleQuestions.length) {
+		return (
+			<div className="min-h-screen flex flex-col items-center justify-center bg-purple-50 text-purple-900">
+				<div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
+					<h1 className="text-3xl font-bold mb-4">Thank you!</h1>
+					<p className="mb-8 text-lg">Your responses have been received.</p>
+					<pre className="bg-white p-4 rounded shadow text-left w-full max-w-md overflow-x-auto text-xs">{JSON.stringify(answers, null, 2)}</pre>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="min-h-screen flex flex-col bg-purple-50 text-purple-900">
+			<div className="flex-1 flex flex-col items-center justify-center">
+				{mainContent}
+				{/* Chat Floating Button and Chat Window */}
+				<button
+					className="fixed bottom-8 right-8 z-50 bg-brand-blue text-white rounded-full shadow-lg px-5 py-3 font-bold hover:bg-brand-teal transition-all"
+					onClick={() => setChatOpen((v) => !v)}
+					aria-label="Open chat"
+				>
+					{chatOpen ? "Close Chat" : "Chat"}
+				</button>
+				{chatOpen && (
+					<div className="fixed bottom-24 right-8 z-50 w-80 bg-white rounded-xl shadow-2xl border border-brand-blue flex flex-col">
+						<div className="p-4 border-b border-brand-blue bg-brand-blue text-white rounded-t-xl font-bold">Support Chat</div>
+						<div className="flex-1 p-4 overflow-y-auto max-h-64">
+							{chatMessages.length === 0 && (
+								<div className="text-gray-400 text-sm">No messages yet. Ask us anything!</div>
+							)}
+							{chatMessages.map((msg, i) => (
+								<div key={i} className={`mb-2 flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
+									<div className={`px-3 py-2 rounded-lg text-sm max-w-[70%] ${msg.sender === "user" ? "bg-brand-blue text-white" : "bg-gray-100 text-gray-800"}`}>
+										{msg.text}
+									</div>
+								</div>
+							))}
+						</div>
+						<div className="p-3 border-t border-brand-blue flex gap-2">
+							<input
+								type="text"
+								className="flex-1 px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+								placeholder="Type your message..."
+								value={chatInput}
+								onChange={(e) => setChatInput(e.target.value)}
+								onKeyDown={(e) => { if (e.key === "Enter") handleSendChat(); }}
+							/>
+							<button
+								className="px-4 py-2 rounded bg-brand-blue text-white font-semibold hover:bg-brand-teal transition-all"
+								onClick={handleSendChat}
+								disabled={!chatInput.trim()}
+							>
+								Send
+							</button>
+						</div>
+					</div>
+				)}
+			</div>
+		</div>
+	);
 }

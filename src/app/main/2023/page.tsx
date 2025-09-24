@@ -2,18 +2,8 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 
-// --- Shared Layout & Year Selector ---
-const yearTabs = [
-  { year: 2022, label: "2022" },
-  { year: 2023, label: "2023" },
-  { year: 2024, label: "2024" },
-  { year: 2025, label: "2025" },
-];
-
-// --- Type Definitions ---
+// Add a type for Question to ensure all properties are typed
 interface QuestionBase {
   id: number;
   question: string;
@@ -32,7 +22,10 @@ interface FileQuestion extends QuestionBase {
 }
 type Question = OptionQuestion | InputQuestion | FileQuestion;
 
-// --- 2023 Questionnaire Data ---
+// ---
+// 🎮 TaxNavo Journey: Story-Style, Contingent IRS 1040 Questionnaire
+// ---
+// Chapter 1: Identity & Filing Status
 const followUpQuestions: Question[] = [
   {
     id: 3,
@@ -131,7 +124,7 @@ const followUpQuestions: Question[] = [
   },
 ];
 
-// --- Type Guards ---
+// Use type guards to check question type before accessing properties
 function isOptionQuestion(q: Question): q is OptionQuestion {
   return (q as OptionQuestion).options !== undefined;
 }
@@ -145,15 +138,14 @@ function isInputQuestion(q: Question): q is InputQuestion {
   );
 }
 
-// --- 2023 Questionnaire Content Component ---
-function Questionnaire2023() {
+export default function Tax2023Questionnaire() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string | number | undefined>>({});
   const [loading, setLoading] = useState(false);
 
   const current = followUpQuestions[step];
-  const progress = Math.round(((step + 1) / followUpQuestions.length) * 100);
 
   function handleOption(option: string) {
     if (!current) return;
@@ -204,7 +196,7 @@ function Questionnaire2023() {
 
   if (!current) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-green-50 text-green-900">
         <h1 className="text-3xl font-bold mb-4">Thank you!</h1>
         <p className="mb-8 text-lg">Your responses have been received.</p>
         <pre className="bg-white p-4 rounded shadow text-left w-full max-w-md overflow-x-auto text-xs">{JSON.stringify(answers, null, 2)}</pre>
@@ -213,175 +205,107 @@ function Questionnaire2023() {
   }
 
   return (
-    <motion.div
-      key={step}
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -30 }}
-      transition={{ duration: 0.4, ease: "easeInOut" }}
-      className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 md:p-12 w-full max-w-2xl mx-auto"
-    >
-      {/* Progress Bar and Step Info */}
-      <div className="mb-6">
-        <motion.div className="h-3 rounded-full bg-[#F3E8FF] overflow-hidden mb-4" initial={false}>
-          <motion.div
-            className="h-3 rounded-full bg-[#FFC107]"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
-          />
-        </motion.div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-[#8000FF] font-semibold">
-            Step {step + 1} of {followUpQuestions.length}
-          </span>
-          <span className="text-sm text-[#FFC107] font-bold">{progress}% Complete</span>
-        </div>
-      </div>
-      {/* Question */}
-      <motion.h2
-        className="text-2xl md:text-3xl font-bold text-[#8000FF] mb-6"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        {current.question}
-      </motion.h2>
-      {/* Answer UI */}
-      {isOptionQuestion(current) && (
-        <div className="flex flex-col gap-4">
-          {current.options.map((option: string) => (
-            <motion.button
-              key={option}
-              whileHover={{ scale: 1.04, backgroundColor: "#FFC107", color: "#8000FF" }}
-              whileTap={{ scale: 0.97 }}
-              className={`px-6 py-3 rounded-xl font-semibold text-lg shadow border transition-colors duration-150
-                ${answers[current.id] === option
-                  ? "bg-[#8000FF] text-white border-[#8000FF]"
-                  : "bg-white text-[#8000FF] border-[#8000FF] hover:bg-[#FFC107] hover:text-[#8000FF]"}
-              `}
-              onClick={() => handleOption(option)}
-            >
-              {option}
-            </motion.button>
-          ))}
-        </div>
-      )}
-      {isInputQuestion(current) && (
-        <div className="flex flex-col gap-4">
-          {current.type === "textarea" ? (
-            <textarea
-              className="px-4 py-3 rounded-xl border border-[#8000FF]/20 focus:ring-2 focus:ring-[#FFC107] text-lg"
-              placeholder={current.placeholder}
-              value={answers[current.id] || ""}
-              onChange={handleInput}
-              rows={4}
-            />
-          ) : (
-            <input
-              type={current.type}
-              className="px-4 py-3 rounded-xl border border-[#8000FF]/20 focus:ring-2 focus:ring-[#FFC107] text-lg"
-              placeholder={current.placeholder}
-              value={answers[current.id] || ""}
-              onChange={handleInput}
-            />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-green-gradient text-brand-black dark:text-brand-white">
+      <div className="card w-full max-w-md">
+        <h1 className="text-2xl font-bold mb-6">2023 Tax Year Questionnaire</h1>
+        <div className="mb-8">
+          <p className="text-lg font-medium mb-4">{current.question.replace(/'/g, "&apos;")}</p>
+          {isOptionQuestion(current) && (
+            <div className="flex flex-col gap-3">
+              {current.options.map((option: string) => (
+                <button
+                  key={option}
+                  className="px-6 py-3 rounded-lg border border-green-200 bg-green-100 hover:bg-green-200 text-green-900 font-semibold transition-colors duration-150"
+                  onClick={() => handleOption(option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
           )}
-          <motion.button
-            whileHover={{ scale: 1.04, backgroundColor: "#FFC107", color: "#8000FF" }}
-            whileTap={{ scale: 0.97 }}
-            className="mt-2 px-6 py-3 rounded-xl bg-[#8000FF] text-white font-semibold shadow hover:bg-[#FFC107] hover:text-[#8000FF] transition-colors duration-150"
-            onClick={handleNext}
-            disabled={!answers[current.id]}
-          >
-            Next
-          </motion.button>
+          {isInputQuestion(current) && current.type === "date" && (
+            <div className="flex flex-col gap-3">
+              <input
+                type="date"
+                className="px-4 py-2 rounded border border-green-200"
+                value={answers[current.id] || ""}
+                onChange={handleInput}
+              />
+              <button
+                className="mt-2 px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700"
+                onClick={handleNext}
+                disabled={!answers[current.id]}
+              >
+                Next
+              </button>
+            </div>
+          )}
+          {isInputQuestion(current) && current.type === "number" && (
+            <div className="flex flex-col gap-3">
+              <input
+                type="number"
+                className="px-4 py-2 rounded border border-green-200"
+                placeholder={current.placeholder}
+                value={answers[current.id] || ""}
+                onChange={handleInput}
+              />
+              <button
+                className="mt-2 px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700"
+                onClick={handleNext}
+                disabled={!answers[current.id]}
+              >
+                Next
+              </button>
+            </div>
+          )}
+          {isInputQuestion(current) && (current.type === "text" || current.type === "email") && (
+            <div className="flex flex-col gap-3">
+              <input
+                type={current.type}
+                className="px-4 py-2 rounded border border-green-200"
+                placeholder={current.placeholder}
+                value={answers[current.id] || ""}
+                onChange={handleInput}
+              />
+              <button
+                className="mt-2 px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700"
+                onClick={handleNext}
+                disabled={!answers[current.id]}
+              >
+                Next
+              </button>
+            </div>
+          )}
+          {isInputQuestion(current) && current.type === "textarea" && (
+            <div className="flex flex-col gap-3">
+              <textarea
+                className="px-4 py-2 rounded border border-green-200"
+                placeholder={current.placeholder}
+                value={answers[current.id] || ""}
+                onChange={handleInput}
+                rows={4}
+              />
+              <button
+                className="mt-2 px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700"
+                onClick={handleNext}
+                disabled={!answers[current.id]}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
-      )}
-      {/* Navigation */}
-      <div className="flex justify-between mt-8">
-        <motion.button
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
-          className="text-[#8000FF] font-semibold hover:underline transition-all"
-          onClick={handlePrev}
-          disabled={step === 0}
-        >
-          Back
-        </motion.button>
-        <span className="text-xs text-gray-400">
-          Need help? <span className="underline cursor-pointer">Chat with support</span>
-        </span>
+        <div className="flex justify-between">
+          <button
+            className="text-green-500 hover:underline"
+            onClick={handlePrev}
+            disabled={step === 0}
+          >
+            Back
+          </button>
+          <span className="text-sm text-green-400">Step {step + 1} of {followUpQuestions.length}</span>
+        </div>
       </div>
-    </motion.div>
-  );
-}
-
-// --- Placeholder Components for Other Years ---
-function Questionnaire2022() {
-  return (
-    <motion.div
-      key="2022"
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -30 }}
-      transition={{ duration: 0.4, ease: "easeInOut" }}
-      className="card w-full max-w-md bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center"
-    >
-      <h1 className="text-2xl font-bold mb-4 text-[#8000FF]">2022 Tax Year Questionnaire</h1>
-      <p className="text-gray-600">2022 content goes here.</p>
-    </motion.div>
-  );
-}
-function Questionnaire2024() {
-  return (
-    <motion.div
-      key="2024"
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -30 }}
-      transition={{ duration: 0.4, ease: "easeInOut" }}
-      className="card w-full max-w-md bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center"
-    >
-      <h1 className="text-2xl font-bold mb-4 text-[#8000FF]">2024 Tax Year Questionnaire</h1>
-      <p className="text-gray-600">2024 content goes here.</p>
-    </motion.div>
-  );
-}
-function Questionnaire2025() {
-  return (
-    <motion.div
-      key="2025"
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -30 }}
-      transition={{ duration: 0.4, ease: "easeInOut" }}
-      className="card w-full max-w-md bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center"
-    >
-      <h1 className="text-2xl font-bold mb-4 text-[#8000FF]">2025 Tax Year Questionnaire</h1>
-      <p className="text-gray-600">2025 content goes here.</p>
-    </motion.div>
-  );
-}
-
-// --- Shared Layout with Modern Header, Year Selector, and Animated Content Switcher ---
-export default function TaxQuestionnairePage() {
-  const [activeYear, setActiveYear] = useState(2023);
-
-  return (
-    <div className="min-h-screen w-full flex flex-col bg-gradient-to-br from-[#F3E8FF] via-white to-[#FFF8E1]">
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-center px-2 py-8">
-        
-        {/* <div className="flex justify-center gap-4 mb-8"> */}
-          {/* "Questionnaire" button removed as requested */}
-        {/* </div> */}
-        <AnimatePresence mode="wait">
-          {activeYear === 2022 && <Questionnaire2022 key="2022" />}
-          {activeYear === 2023 && <Questionnaire2023 key="2023" />}
-          {activeYear === 2024 && <Questionnaire2024 key="2024" />}
-          {activeYear === 2025 && <Questionnaire2025 key="2025" />}
-        </AnimatePresence>
-      </main>
     </div>
   );
 }
