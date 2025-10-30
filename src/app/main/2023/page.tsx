@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-// Add a type for Question to ensure all properties are typed
+// --- Types ---
 interface QuestionBase {
   id: number;
   question: string;
@@ -16,16 +16,9 @@ interface InputQuestion extends QuestionBase {
   type: "text" | "number" | "date" | "textarea" | "email";
   placeholder?: string;
 }
-interface FileQuestion extends QuestionBase {
-  type: "file";
-  docTypes: string[];
-}
-type Question = OptionQuestion | InputQuestion | FileQuestion;
+type Question = OptionQuestion | InputQuestion;
 
-// ---
-// 🎮 TaxNavo Journey: Story-Style, Contingent IRS 1040 Questionnaire
-// ---
-// Chapter 1: Identity & Filing Status
+// --- Questions ---
 const followUpQuestions: Question[] = [
   {
     id: 3,
@@ -124,7 +117,7 @@ const followUpQuestions: Question[] = [
   },
 ];
 
-// Use type guards to check question type before accessing properties
+// --- Type Guards ---
 function isOptionQuestion(q: Question): q is OptionQuestion {
   return (q as OptionQuestion).options !== undefined;
 }
@@ -145,7 +138,12 @@ export default function Tax2023Questionnaire() {
   const [answers, setAnswers] = useState<Record<number, string | number | undefined>>({});
   const [loading, setLoading] = useState(false);
 
-  const current = followUpQuestions[step];
+  // Only show questions that pass their showIf condition
+  const visibleQuestions = followUpQuestions.filter(
+    (q) => !q.showIf || q.showIf(answers)
+  );
+  const current = visibleQuestions[step];
+  const progressPercent = Math.round(((step + 1) / visibleQuestions.length) * 100);
 
   function handleOption(option: string) {
     if (!current) return;
@@ -196,7 +194,7 @@ export default function Tax2023Questionnaire() {
 
   if (!current) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-green-50 text-green-900">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#F3E8FF] via-white to-[#FFF8E1] text-[#8000FF]">
         <h1 className="text-3xl font-bold mb-4">Thank you!</h1>
         <p className="mb-8 text-lg">Your responses have been received.</p>
         <pre className="bg-white p-4 rounded shadow text-left w-full max-w-md overflow-x-auto text-xs">{JSON.stringify(answers, null, 2)}</pre>
@@ -205,107 +203,89 @@ export default function Tax2023Questionnaire() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-green-gradient text-brand-black dark:text-brand-white">
-      <div className="card w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6">2023 Tax Year Questionnaire</h1>
-        <div className="mb-8">
-          <p className="text-lg font-medium mb-4">{current.question.replace(/'/g, "&apos;")}</p>
-          {isOptionQuestion(current) && (
-            <div className="flex flex-col gap-3">
-              {current.options.map((option: string) => (
+    <main className="flex-1 w-full max-w-4xl mx-auto px-2 sm:px-6 py-8 flex flex-col items-center">
+      <div className="w-full">
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 md:p-12 w-full max-w-2xl mx-auto">
+          <div className="mb-6">
+            <div className="h-3 rounded-full bg-[#F3E8FF] overflow-hidden mb-4">
+              <div className="h-3 rounded-full bg-[#FFC107]" style={{ width: `${progressPercent}%` }}></div>
+            </div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-[#8000FF] font-semibold">
+                Step {step + 1} of {visibleQuestions.length}
+              </span>
+              <span className="text-sm text-[#FFC107] font-bold">
+                {progressPercent}% Complete
+              </span>
+            </div>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold text-[#8000FF] mb-6">{current.question}</h2>
+          <div className="flex flex-col gap-4">
+            {isOptionQuestion(current) && (
+              <div className="flex flex-col gap-3">
+                {current.options.map((option: string) => (
+                  <button
+                    key={option}
+                    className="px-6 py-3 rounded-xl border border-[#8000FF]/20 bg-[#F3E8FF] hover:bg-[#FFC107] hover:text-[#8000FF] text-lg font-semibold transition-colors duration-150"
+                    onClick={() => handleOption(option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+            {isInputQuestion(current) && (
+              <>
+                {current.type === "date" && (
+                  <input
+                    type="date"
+                    className="px-4 py-3 rounded-xl border border-[#8000FF]/20 focus:ring-2 focus:ring-[#FFC107] text-lg"
+                    value={answers[current.id] || ""}
+                    onChange={handleInput}
+                  />
+                )}
+                {(current.type === "number" || current.type === "text" || current.type === "email") && (
+                  <input
+                    type={current.type}
+                    className="px-4 py-3 rounded-xl border border-[#8000FF]/20 focus:ring-2 focus:ring-[#FFC107] text-lg"
+                    placeholder={current.placeholder}
+                    value={answers[current.id] || ""}
+                    onChange={handleInput}
+                  />
+                )}
+                {current.type === "textarea" && (
+                  <textarea
+                    className="px-4 py-3 rounded-xl border border-[#8000FF]/20 focus:ring-2 focus:ring-[#FFC107] text-lg"
+                    placeholder={current.placeholder}
+                    value={answers[current.id] || ""}
+                    onChange={handleInput}
+                    rows={4}
+                  />
+                )}
                 <button
-                  key={option}
-                  className="px-6 py-3 rounded-lg border border-green-200 bg-green-100 hover:bg-green-200 text-green-900 font-semibold transition-colors duration-150"
-                  onClick={() => handleOption(option)}
+                  className="mt-2 px-6 py-3 rounded-xl bg-[#8000FF] text-white font-semibold shadow hover:bg-[#FFC107] hover:text-[#8000FF] transition-colors duration-150"
+                  onClick={handleNext}
+                  disabled={!answers[current.id]}
                 >
-                  {option}
+                  Next
                 </button>
-              ))}
-            </div>
-          )}
-          {isInputQuestion(current) && current.type === "date" && (
-            <div className="flex flex-col gap-3">
-              <input
-                type="date"
-                className="px-4 py-2 rounded border border-green-200"
-                value={answers[current.id] || ""}
-                onChange={handleInput}
-              />
-              <button
-                className="mt-2 px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700"
-                onClick={handleNext}
-                disabled={!answers[current.id]}
-              >
-                Next
-              </button>
-            </div>
-          )}
-          {isInputQuestion(current) && current.type === "number" && (
-            <div className="flex flex-col gap-3">
-              <input
-                type="number"
-                className="px-4 py-2 rounded border border-green-200"
-                placeholder={current.placeholder}
-                value={answers[current.id] || ""}
-                onChange={handleInput}
-              />
-              <button
-                className="mt-2 px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700"
-                onClick={handleNext}
-                disabled={!answers[current.id]}
-              >
-                Next
-              </button>
-            </div>
-          )}
-          {isInputQuestion(current) && (current.type === "text" || current.type === "email") && (
-            <div className="flex flex-col gap-3">
-              <input
-                type={current.type}
-                className="px-4 py-2 rounded border border-green-200"
-                placeholder={current.placeholder}
-                value={answers[current.id] || ""}
-                onChange={handleInput}
-              />
-              <button
-                className="mt-2 px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700"
-                onClick={handleNext}
-                disabled={!answers[current.id]}
-              >
-                Next
-              </button>
-            </div>
-          )}
-          {isInputQuestion(current) && current.type === "textarea" && (
-            <div className="flex flex-col gap-3">
-              <textarea
-                className="px-4 py-2 rounded border border-green-200"
-                placeholder={current.placeholder}
-                value={answers[current.id] || ""}
-                onChange={handleInput}
-                rows={4}
-              />
-              <button
-                className="mt-2 px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700"
-                onClick={handleNext}
-                disabled={!answers[current.id]}
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="flex justify-between">
-          <button
-            className="text-green-500 hover:underline"
-            onClick={handlePrev}
-            disabled={step === 0}
-          >
-            Back
-          </button>
-          <span className="text-sm text-green-400">Step {step + 1} of {followUpQuestions.length}</span>
+              </>
+            )}
+          </div>
+          <div className="flex justify-between mt-8">
+            <button
+              className="text-[#8000FF] font-semibold hover:underline transition-all"
+              onClick={handlePrev}
+              disabled={step === 0}
+            >
+              Back
+            </button>
+            <span className="text-xs text-gray-400">
+              Need help? <span className="underline cursor-pointer">Chat with support</span>
+            </span>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

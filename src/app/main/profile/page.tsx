@@ -25,6 +25,7 @@ import {
   Mail,
   MapPin
 } from "lucide-react";
+import Link from "next/link";
 
 interface TaxProfile {
   firstName: string;
@@ -652,10 +653,16 @@ export default function ProfilePage() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => router.push('/main/1040')}
                 className="w-full px-6 py-3 rounded-xl bg-[#FFC107] text-[#8000FF] font-semibold hover:bg-[#FFD54F] transition-all duration-200 shadow-lg"
               >
-                View My 1040
+                <Link
+                  href="/main/2024?tab=taxprep"
+                  className="block w-full h-full"
+                  tabIndex={0}
+                  style={{ textAlign: "center" }}
+                >
+                  View My 1040
+                </Link>
               </motion.button>
               
               <motion.button
