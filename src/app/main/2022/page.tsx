@@ -34,7 +34,7 @@ const questions: Question[] = [
 	},
 	{
 		id: 5,
-		question: "Did you support any dependents in 2024?",
+		question: "Did you support any dependents in 2024 ?",
 		options: ["Yes", "No"]
 	},
 	{
